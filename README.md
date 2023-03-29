@@ -27,3 +27,9 @@ matches played, who won the game and at what time it was played.
 The stats will include the player's win percentage.
 
 These stats can be deleted at any time bu the player when selecting the **Delete** option from the main menu.
+
+Languages:
+  - HTML
+  - CSS
+  - JavaScript
+  - Rust
