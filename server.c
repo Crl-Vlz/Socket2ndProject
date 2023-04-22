@@ -164,10 +164,10 @@ int main()
 					perror("accept");
 					exit(EXIT_FAILURE);
 				}
+				client_sockets[player_count++] = new_socket;
 
 				valread = read(new_socket, buffer, 1024);
 				strcpy(player_choice[i], buffer);
-				player_count++;
 
 				if (player_count == 2)
 				{
@@ -180,8 +180,8 @@ int main()
 					sprintf(c, "%d", res);
 					printf("Result %s\n", c);
 					player_count = 0;
-					write(client_sockets[p1], c, strlen(c));
-					write(client_sockets[p2], c, strlen(c));
+					send(client_sockets[p1], c, strlen(c), 0);
+					send(client_sockets[p2], c, strlen(c), 0);
 					memset(player_choice[p1], 0, sizeof(player_choice[p1]));
 					memset(player_choice[p2], 0, sizeof(player_choice[p2]));
 				}

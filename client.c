@@ -43,8 +43,13 @@ int main(int argc, char const *argv[]) {
         printf("Invalid input!\n");
     }
     send(sock, buffer, strlen(buffer), 0);
-    valread = read(sock, buffer, 1024);
-    printf("The result is %s\n", buffer);
+    char response[1024] = {0};
+    valread = read(sock, response, 1024);
+    if (valread < 0){
+        perror("Response error");
+        return -1;
+    }
+    printf("The result is %s\n", response);
     close(sock);
     return 0;
 }
