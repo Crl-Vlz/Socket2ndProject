@@ -5,7 +5,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 
-#define SERVER_ADRESS "172.18.2.2"
+#define SERVER_ADDRESS "172.18.2.2"
 #define SERVER_PORT 5000
 #define BUFFER_SIZE 1024
 
@@ -57,18 +57,19 @@ int main() {
 
     // print result
     buffer[bytes_received] = '\0';  // add null terminator to received data
-    switch(buffer){
-        case '1':
-            printf("Player A wins!\n", buffer);
+    int out = atoi(buffer);
+    switch(out){
+        case 1:
+            printf("Player A wins!\n");
             break;
-        case '2':
-            printf("Player B wins!\n", buffer);
+        case 2:
+            printf("Player B wins!\n");
             break;
-        case '3':
-            printf("Tie\n", buffer);
+        case 3:
+            printf("Tie\n");
             break;
-        case '-1':
-            printf("Communication error\n", buffer);
+        case -1:
+            printf("Communication error\n");
             break;
     }
 
