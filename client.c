@@ -1,80 +1,50 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
 #include <arpa/inet.h>
-#include <unistd.h>
 
-#define SERVER_ADDRESS "172.18.2.2"
-#define SERVER_PORT 5000
-#define BUFFER_SIZE 1024
-
-int main() {
-    int client_socket;
-    struct sockaddr_in server_addr;
-    char buffer[BUFFER_SIZE];
-
-    // create socket
-    client_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (client_socket == -1) {
-        printf("Error: could not create socket\n");
-        exit(EXIT_FAILURE);
+int main(int argc, char const *argv[]) {
+    struct sockaddr_in address;
+    int sock = 0, valread;
+    struct sockaddr_in serv_addr;
+    char buffer[1024] = {0};
+     
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        printf("\n Socket creation error \n");
+        return -1;
+    }
+   
+    memset(&serv_addr, '0', sizeof(serv_addr));
+   
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(5000 + atoi(argv[1]));
+       
+    // Convert IPv4 and IPv6 addresses from text to binary form
+    if(inet_pton(AF_INET, "172.18.2.2", &serv_addr.sin_addr)<=0) {
+        printf("\nInvalid address/ Address not supported \n");
+        return -1;
+    }
+   
+    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+        printf("\nConnection Failed \n");
+        return -1;
     }
 
-    // set server address
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = inet_addr(SERVER_ADDRESS);
-    server_addr.sin_port = htons(SERVER_PORT);
-
-    // connect to server
-    if (connect(client_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
-        printf("Error: could not connect to server\n");
-        exit(EXIT_FAILURE);
-    }
-
-    // get player's choice
-    char choice[1];
-    int num = -1;
-    while(1 == 1){
+    while(1){
         printf("Enter your choice (rock[1], paper[2], or scissors[3]): ");
-        fgets(choice, 1, stdin);
-        int num = atoi(choice[0]);
-        if (num == 1 || num == 2 || num == 3)
+        fgets(buffer, 1024, stdin);
+        buffer[strcspn(buffer, "\n")] = 0;
+        if (strcmp(buffer, "1") == 0 || strcmp(buffer, "2") == 0 || strcmp(buffer, "3") == 0) {
             break;
+        }
+        printf("Invalid input!\n");
     }
-
-    choice[strcspn(choice, "\n")] = '\0';  // remove newline character
-
-    // send player's choice to server
-    send(client_socket, choice, strlen(choice), 0);
-
-    // receive result from server
-    int bytes_received = recv(client_socket, buffer, BUFFER_SIZE, 0);
-    if (bytes_received < 0) {
-        printf("Error: could not receive data from server\n");
-        exit(EXIT_FAILURE);
-    }
-
-    // print result
-    buffer[bytes_received] = '\0';  // add null terminator to received data
-    int out = atoi(buffer);
-    switch(out){
-        case 1:
-            printf("Player A wins!\n");
-            break;
-        case 2:
-            printf("Player B wins!\n");
-            break;
-        case 3:
-            printf("Tie\n");
-            break;
-        case -1:
-            printf("Communication error\n");
-            break;
-    }
-
-    // close socket
-    close(client_socket);
-
+    send(sock, buffer, strlen(buffer), 0);
+    valread = read(sock, buffer, 1024);
+    printf("The result is %s\n", buffer);
+    close(sock);
     return 0;
 }

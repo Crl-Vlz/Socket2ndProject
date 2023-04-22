@@ -166,7 +166,6 @@ int main()
 				}
 
 				valread = read(new_socket, buffer, 1024);
-				printf("Player %d: %s\n", i + 1, buffer);
 				strcpy(player_choice[i], buffer);
 				player_count++;
 
@@ -174,15 +173,17 @@ int main()
 				{
 					int p1 = i - 1;
 					int p2 = i;
-					int res = play(p1, p2);
-					char r[1];
-					sprintf(r, "%d", res);
+					int a = atoi(player_choice[p1]), b = atoi(player_choice[p2]);
+					printf("Player 1: %d and Player 2: %d\n", a, b);
+					int res = play(a, b);
+					char c[10];
+					sprintf(c, "%d", res);
+					printf("Result %s\n", c);
 					player_count = 0;
-					for (int j = 0; j < MAX_CLIENTS; j++)
-					{
-						write(client_sockets[j], r, strlen(r));
-						memset(player_choice[j], 0, sizeof(player_choice[j]));
-					}
+					write(client_sockets[p1], c, strlen(c));
+					write(client_sockets[p2], c, strlen(c));
+					memset(player_choice[p1], 0, sizeof(player_choice[p1]));
+					memset(player_choice[p2], 0, sizeof(player_choice[p2]));
 				}
 			}
 		}
