@@ -6,7 +6,7 @@
 #include <unistd.h>
 
 #define PORT 5000
-#define MAXLINE 1
+#define MAXLINE 1024
 #define MAXCLIENTS 30
 
 int play(int a, int b) {
@@ -16,7 +16,7 @@ int play(int a, int b) {
 		A and B
 		1 = Rock
 		2 = Paper
-		3 = Scicssors
+		3 = Scissors
 
 		C
 		1 = Player A
