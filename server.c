@@ -8,6 +8,7 @@
 #include <errno.h>
 
 #define MAX_CLIENTS 10
+#define PORT 5000
 
 int play(int a, int b)
 {
@@ -94,98 +95,102 @@ int play(int a, int b)
 	return c;
 }
 
-int main()
+int playGame(int p1_fd, int p2_fd)
 {
-	int client_sockets[MAX_CLIENTS];
-	fd_set readfds;
-	int max_sd, activity, new_socket, i, valread, sd, player_count = 0;
+	char ma[1024] = {0};
+	char mb[1024] = {0};
+	int bytes_read = read(p1_fd, ma, 1024);
+	if (bytes_read < 0)
+	{
+		perror("Read error");
+		return -1;
+	}
+	bytes_read = read(p2_fd, mb, 1024);
+	if (bytes_read < 0)
+	{
+		perror("Read error");
+		return -1;
+	}
+	int a = atoi(ma), b = atoi(mb);
+	printf("Player 1: %d and Player 2: %d\n", a, b);
+	int res = play(a, b);
+	char c[10];
+	sprintf(c, "%d", res);
+	printf("Result %s\n", c);
+	send(p1_fd, c, strlen(c), 0);
+	send(p2_fd, c, strlen(c), 0);
+	close(p1_fd);
+	close(p2_fd);
+	return 0;
+}
+
+int main(int argc, char const *argv[])
+{
+	int server_fd, client_fds[MAX_CLIENTS], num_clients = 0;
 	struct sockaddr_in address;
 	int addrlen = sizeof(address);
-	char buffer[1024] = {0};
-	char player_choice[MAX_CLIENTS][10];
-	int player_scores[MAX_CLIENTS] = {0};
-	char *choices[] = {"rock", "paper", "scissors"};
 
-	// Create ten sockets and add their file descriptors to the array
-	for (i = 0; i < MAX_CLIENTS; i++)
+	// Create the server socket
+	if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
 	{
-		client_sockets[i] = socket(AF_INET, SOCK_STREAM, 0);
-		if (client_sockets[i] < 0)
-		{
-			perror("socket creation failed");
-			exit(EXIT_FAILURE);
-		}
-
-		address.sin_family = AF_INET;
-		address.sin_addr.s_addr = INADDR_ANY;
-		address.sin_port = htons(5000 + i);
-
-		if (bind(client_sockets[i], (struct sockaddr *)&address, sizeof(address)) < 0)
-		{
-			perror("bind failed");
-			exit(EXIT_FAILURE);
-		}
-		if (listen(client_sockets[i], 3) < 0)
-		{
-			perror("listen");
-			exit(EXIT_FAILURE);
-		}
+		perror("socket failed");
+		exit(EXIT_FAILURE);
 	}
 
+	// Bind the socket to the specified port
+	address.sin_family = AF_INET;
+	address.sin_addr.s_addr = INADDR_ANY;
+	address.sin_port = htons(PORT);
+
+	if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
+	{
+		perror("bind failed");
+		exit(EXIT_FAILURE);
+	}
+
+	// Listen for incoming connections
+	if (listen(server_fd, MAX_CLIENTS) < 0)
+	{
+		perror("listen failed");
+		exit(EXIT_FAILURE);
+	}
+
+	// Accept incoming connections
 	while (1)
 	{
-		FD_ZERO(&readfds);
-		for (i = 0; i < MAX_CLIENTS; i++)
+		// Wait for a new connection
+		int new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen);
+		if (new_socket < 0)
 		{
-			FD_SET(client_sockets[i], &readfds);
+			perror("accept failed");
+			exit(EXIT_FAILURE);
 		}
-		max_sd = client_sockets[0];
-		for (i = 1; i < MAX_CLIENTS; i++)
+
+		// Add the new client to the list
+		client_fds[num_clients++] = new_socket;
+
+		// If there are two clients waiting, pair them up and play the game
+		if (num_clients == 2)
 		{
-			if (client_sockets[i] > max_sd)
+			int player1_fd = client_fds[0];
+			int player2_fd = client_fds[1];
+
+			// Play the game
+			if (playGame(player1_fd, player2_fd) < 0)
+				return -1;
+
+			// Remove the players from the list
+			for (int i = 0; i < num_clients; i++)
 			{
-				max_sd = client_sockets[i];
-			}
-		}
-
-		activity = select(max_sd + 1, &readfds, NULL, NULL, NULL);
-		if ((activity < 0) && (errno != EINTR))
-		{
-			printf("select error");
-		}
-
-		for (i = 0; i < MAX_CLIENTS; i++)
-		{
-			sd = client_sockets[i];
-			if (FD_ISSET(sd, &readfds))
-			{
-				if ((new_socket = accept(sd, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0)
+				if (client_fds[i] == player1_fd || client_fds[i] == player2_fd)
 				{
-					perror("accept");
-					exit(EXIT_FAILURE);
-				}
-				client_sockets[player_count++] = new_socket;
-
-				valread = read(new_socket, buffer, 1024);
-				strcpy(player_choice[i], buffer);
-
-				if (player_count == 2)
-				{
-					int p1 = i - 1;
-					int p2 = i;
-					int a = atoi(player_choice[p1]), b = atoi(player_choice[p2]);
-					printf("Player 1: %d and Player 2: %d\n", a, b);
-					int res = play(a, b);
-					char c[10];
-					sprintf(c, "%d", res);
-					printf("Result %s\n", c);
-					player_count = 0;
-					send(client_sockets[p1], c, strlen(c), 0);
-					send(client_sockets[p2], c, strlen(c), 0);
-					memset(player_choice[p1], 0, sizeof(player_choice[p1]));
-					memset(player_choice[p2], 0, sizeof(player_choice[p2]));
+					for (int j = i; j < num_clients - 1; j++)
+					{
+						client_fds[j] = client_fds[j + 1];
+					}
 				}
 			}
+			num_clients -= 2;
 		}
 	}
 	return 0;

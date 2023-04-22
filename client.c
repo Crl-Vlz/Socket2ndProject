@@ -6,7 +6,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-int main(int argc, char const *argv[]) {
+int main() {
     struct sockaddr_in address;
     int sock = 0, valread;
     struct sockaddr_in serv_addr;
@@ -20,7 +20,7 @@ int main(int argc, char const *argv[]) {
     memset(&serv_addr, '0', sizeof(serv_addr));
    
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(5000 + atoi(argv[1]));
+    serv_addr.sin_port = htons(5000);
        
     // Convert IPv4 and IPv6 addresses from text to binary form
     if(inet_pton(AF_INET, "172.18.2.2", &serv_addr.sin_addr)<=0) {
