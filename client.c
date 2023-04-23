@@ -11,18 +11,20 @@
 #define UDP_PORT 5001
 #define IP_ADDR "172.18.2.2"
 
-char *parse_player(char p){
+char *parse_player(char p)
+{
     int player = atoi(&p);
-    switch(player){
-        case 1:
-            return "You are Player A\n";
-            break;
-        case 2:
-            return "You are Player B\n";
-            break;
-        default:
-            return "Could not define player\n";
-            break;
+    switch (player)
+    {
+    case 1:
+        return "You are Player A\n";
+        break;
+    case 2:
+        return "You are Player B\n";
+        break;
+    default:
+        return "Could not define player\n";
+        break;
     }
 }
 
@@ -43,6 +45,23 @@ char *parse_result(char r)
     }
 }
 
+char *parse_result_udp(char r)
+{
+    int code = atoi(&r);
+    switch (code)
+    {
+    case 1:
+        return "You win!\n";
+    case 2:
+        return "You lose!\n";
+    case 3:
+        return "Its a tie!\n";
+    case 0:
+    default:
+        return "Communication error\n";
+    }
+}
+
 void handle_tcp_message()
 {
     int sock = 0;
@@ -51,6 +70,7 @@ void handle_tcp_message()
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
         perror("Socket creation error\n");
+        close(sock);
         return;
     }
 
@@ -85,7 +105,9 @@ void handle_tcp_message()
         perror("Invalid input!\n");
     }
 
-    send(sock, message, 1024, 0);
+    if(send(sock, message, 1024, 0) > 0){
+        printf("Sent data correctly\n");
+    }
     if (read(sock, message, 1024) < 0)
     {
         perror("Read error");
@@ -98,7 +120,7 @@ void handle_tcp_message()
     close(sock);
 }
 
-void handle_udp_message(char *message)
+void handle_udp_message()
 {
     int sock = 0;
     struct sockaddr_in serv_addr;
@@ -106,7 +128,8 @@ void handle_udp_message(char *message)
     if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
     {
         perror("Socker creation error\n");
-        exit(EXIT_FAILURE);
+        close(sock);
+        return;
     }
 
     memset(&serv_addr, '0', sizeof(serv_addr));
@@ -116,18 +139,38 @@ void handle_udp_message(char *message)
     if (inet_pton(AF_INET, IP_ADDR, &serv_addr.sin_addr) <= 0)
     {
         perror("Invalid address\n");
-        exit(EXIT_FAILURE);
+        close(sock);
+        return;
     }
 
-    sendto(sock, message, 1024, 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+    char message[1024];
+
+    while (1)
+    {
+        printf("Enter your choice (rock[1], paper[2], or scissors[3]):\n");
+        fgets(message, 1024, stdin);
+        message[strcspn(message, "\n")] = 0;
+        if (strcmp(message, "1") == 0 || strcmp(message, "2") == 0 || strcmp(message, "3") == 0)
+        {
+            break;
+        }
+        perror("Invalid input!\n");
+    }
+
+    if (sendto(sock, message, 1024, 0, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+    {
+        perror("Error sending packets\n");
+        close(sock);
+        return;
+    }
 
     if (recvfrom(sock, message, 1024, 0, NULL, NULL) < 0)
     {
         perror("Could not get UDP packet\n");
-        exit(EXIT_FAILURE);
+        close(sock);
+        return;
     }
-    printf("%s", parse_player(message[0]));
-    printf("%s", parse_result(message[1]));
+    printf("%s", parse_result_udp(message[0]));
     close(sock);
 }
 
@@ -141,7 +184,7 @@ int main()
     int option = -1;
     do
     {
-        printf("Select the option\n TCP: 1 \n UDP: 2 \n Exit: 3\n");
+        printf("Select the option\nAgainst player: 1 \nAgainst CPU: 2 \nRules: 3\nExit: 4\n");
         fgets(buffer, 1024, stdin);
         buffer[strcspn(buffer, "\n")] = 0;
         option = atoi(buffer);
@@ -155,21 +198,18 @@ int main()
         case 2:
         {
             // UDP code goes here
-            while (1)
-            {
-                printf("Enter your choice (rock[1], paper[2], or scissors[3]):\n");
-                fgets(buffer, 1024, stdin);
-                buffer[strcspn(buffer, "\n")] = 0;
-                if (strcmp(buffer, "1") == 0 || strcmp(buffer, "2") == 0 || strcmp(buffer, "3") == 0)
-                {
-                    break;
-                }
-                perror("Invalid input!\n");
-            }
-            handle_udp_message(buffer);
+            handle_udp_message();
         }
         break;
         case 3:
+        {
+            printf("This program connects you with other players to have some ");
+            printf("intense round of rock paper scissors!\nTo start just select if you want");
+            printf("to play against other players or against the machine, then just select what you will\n");
+            printf("throw. But, remember to have fun!!!\n");
+        }
+        break;
+        case 4:
         {
             // Exit program
             printf("Goodbye\n");
@@ -181,6 +221,6 @@ int main()
         }
         break;
         }
-    } while (option != 3);
+    } while (option != 4);
     return 0;
 }
