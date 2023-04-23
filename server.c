@@ -115,9 +115,10 @@ int playGame(int p1_fd, int p2_fd)
 	printf("Player 1: %d and Player 2: %d\n", a, b);
 	int res = play(a, b);
 	char c[10];
-	sprintf(c, "%d", res);
+	sprintf(c, "1%d", res);
 	printf("Result %s\n", c);
 	send(p1_fd, c, strlen(c), 0);
+	sprintf(c, "2%d", res);
 	send(p2_fd, c, strlen(c), 0);
 	close(p1_fd);
 	close(p2_fd);
