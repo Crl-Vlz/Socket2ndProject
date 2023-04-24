@@ -115,6 +115,7 @@ function play(){
             $(card).click(function(event){
                 user = getUserChoice(event.target);
                 //Mandas user a server (String)
+                /*
                 const server = net.createServer((socket) => {
                     console.log("Connection from", socket.remoteAddress, "port", socket.remotePort)
                     socket.on("connect", () => {
@@ -126,9 +127,8 @@ function play(){
                     socket.on("end", () => {
                       console.log("Closed", socket.remoteAddress, "port", socket.remotePort)
                     })
-                })
-
-                server.listen(5000)
+                })*/
+                cpu=getComputerChoice();
                 start();
             })
         });
