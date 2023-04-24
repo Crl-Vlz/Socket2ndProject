@@ -1,3 +1,5 @@
+import net from "net"
+
 function play(){
 
     var options = ['rock', 'paper', 'scissors', 'lizard', 'spock'], toWin = ['scissorspaper', 'paperrock', 'rocklizard', 'lizardspock', 'spockscissors', 'rockscissors', 'scissorslizard', 'lizardpaper', 'paperspock', 'spockrock'];
@@ -112,8 +114,21 @@ function play(){
         $('.user-choice .game-card').toArray().forEach(function(card){
             $(card).click(function(event){
                 user = getUserChoice(event.target);
-                cpu = getComputerChoice();
-    
+                //Mandas user a server (String)
+                const server = net.createServer((socket) => {
+                    console.log("Connection from", socket.remoteAddress, "port", socket.remotePort)
+                    socket.on("connect", () => {
+                        socket.write(user)
+                    })
+                    socket.on("data", (data) => {
+                        cpu = options[parseInt(data)]  
+                    })
+                    socket.on("end", () => {
+                      console.log("Closed", socket.remoteAddress, "port", socket.remotePort)
+                    })
+                })
+
+                server.listen(5000)
                 start();
             })
         });
