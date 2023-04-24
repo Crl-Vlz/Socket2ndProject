@@ -112,7 +112,10 @@ function play(){
         $('.user-choice .game-card').toArray().forEach(function(card){
             $(card).click(function(event){
                 user = getUserChoice(event.target);
-                cpu = getComputerChoice();
+                // mandar user a servidor
+                cpu = getComputerChoice(); // recibir la elección del rival desde el servidor
+
+                //bloquear proceso hasta recibir la respuesta del cpu
     
                 start();
             })
