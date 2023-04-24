@@ -10,15 +10,6 @@
 #define MAX_CLIENTS 10
 #define PORT 5000
 
-char nameToInt(char *name) {
-	if (strcmp(name, "rock") == 0) return '0';
-	if (strcmp(name, "paper") == 0) return '1';
-	if (strcmp(name, "scissors") == 0) return '2';
-	if (strcmp(name, "lizard") == 0) return '3';
-	if (strcmp(name, "spock") == 0) return '4';
- 	return '5'
-}
-
 int play(int a, int b)
 {
 	int c = -1;
@@ -120,8 +111,15 @@ int playGame(int p1_fd, int p2_fd)
 		perror("Read error");
 		return -1;
 	}
-	send(p1_fd, mb, strlen(mb), 0);
-	send(p2_fd, ma, strlen(ma), 0);
+	int a = atoi(ma), b = atoi(mb);
+	printf("Player 1: %d and Player 2: %d\n", a, b);
+	int res = play(a, b);
+	char c[10];
+	sprintf(c, "1%d%d", res, b);
+	printf("Result %s\n", c);
+	send(p1_fd, c, strlen(c), 0);
+	sprintf(c, "2%d%d", res, a);
+	send(p2_fd, c, strlen(c), 0);
 	close(p1_fd);
 	close(p2_fd);
 	return 0;
