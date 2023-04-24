@@ -4,7 +4,6 @@ RUN apt-get update \
     && apt-get install -y firefox mesa-utils libgl1-mesa-dri libgl1-mesa-glx libpci3 libegl1-mesa \
     && rm -rf /var/lib/apt/lists/*
 
-CMD ["firefox"]
 
 #Install curl
 RUN apt-get update
